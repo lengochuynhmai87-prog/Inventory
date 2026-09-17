@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "k9OZE5Eg34g=",
+  "success": true,
+  "projectFilePath": "D:\\Back-End_Learning\\Inventory\\Inventory\\Inventory.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.aspnetcore.app.internal.assets\\10.0.10\\microsoft.aspnetcore.app.internal.assets.10.0.10.nupkg.sha512"
+  ],
+  "logs": []
+}
