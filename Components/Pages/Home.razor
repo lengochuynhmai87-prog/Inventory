@@ -1,7 +1,10 @@
-﻿@page "/"
+﻿@page "/kho/{WarehouseID:int}"
 @rendermode InteractiveServer    
 @using System.Diagnostics
+@using System.Reflection.Metadata
+
 @inject HandleProduct productService 
+@inject AppDbContext Db
 
 
 
@@ -14,28 +17,33 @@
             <tr>
                 <th class="text-center">Number</th>
                 <th>Nanme</th>
-                <th class="text-end">Quantity</th>
-                <th class="text-center">Unit</th>
-                <th class="text-center">Date update</th>
+            @foreach(var attr in attributes)
+            {
+                <th>@attr.name</th>
+            }
+            <th class="text-center">Date update</th>
                 <th class="text-center">UPDATE</th>
             </tr>
         </thead>
         <tbody>
-            @if(warehouse ==null || !warehouse.Any())
+            @if(products ==null || !products.Any())
             {
                 <tr>
                     <td colspan="6" class="text-center text-muted">Không có sản phẩm</td>
                 </tr>
             }else{
                 int STT =1;
-                @foreach(var products in warehouse)
+                @foreach(var products in products)
                 {
                     <tr>
                         <td class="text-center">@(STT++)</td>
                         <td>@products.Name</td>
                         <td class="text-end">@products.Quantity</td>
-                        <td class="text-center">@products.Unit</td>
-                        <td class="text-center">@products.DateUpdate</td>
+                    @foreach(var attr in attributes)
+                    {
+                        <td>@GetValues(products, attr.Id)</td>
+                    }
+                    <td class="text-center">@products.DateUpdate</td>
                         <td class="text-center">
                             <button class= "btn btn-sm btn-outline-primary me-1">Edit</button>
                             <button class ="btn btn-sm btn-outline-danger" @onclick="()=>productService.DeleteProduct(products.ID)">Remove</button>
@@ -47,12 +55,13 @@
 
         </tbody>
     </table>
-
+    <div>
     <button class="btn btn-primary rounded-circle position-fixed bottom-0 end-0 m-4 shadow-lg d-flex align-items-center justify-content-center" 
     style="width: 60px; height: 60px; font-size: 32px; z-index: 1000;"
     @onclick="ShowFrom">
     +
 </button>
+    </div>
 @if(show == true){
     <div class ="card p-3 my-3 shadow-sm" style="max-width:400px;">
         <h2>Enter New Product</h2>
@@ -65,42 +74,54 @@
             <label>Quantity</label>
             <InputNumber @bind-Value="newProduct.Quantity" class ="form-control"/>
             </div>
-            <div class="mb-3">
-            <label>Unit</label>
-            <InputText @bind-Value="newProduct.Unit" class="form-control" />
-            </div>
             <button type="submit" class="btn btn-primary">Lưu</button>
             <button type="button" class="btn btn-danger" @onclick="ShowFrom">Hủy</button>
         </EditForm>
     </div>
 }
 @code{
+    [Parameter] public int WarehouseID{get;set;}
+    private List<ProductAttribute> attributes = new();
     Product newProduct = new Product();
-    private List<Product> warehouse = new List<Product>();
+    private List<Product> products = new List<Product>();
     //ẩn hiện form nhập
     private bool show =false;
-    private bool modeEdit= false;
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
+    {  
+        attributes = await Db.ProductAttributes
+            .Where(a => a.WarehouseID == WarehouseID)
+            .ToListAsync();
+
+        products = await Db.Products
+            .Include(p => p.value)
+            .Where(p => p.WarehouseID == WarehouseID)
+            .ToListAsync();
+    }
+    private string GetValues(Product p, int attrId)
     {
-        warehouse =  productService.GetProduct();
-        base.OnInitialized();
+    var v = p.value.FirstOrDefault(x => x.AttributeId == attrId);       
+    return v?.value ?? "";
     }
     //Thêm sản phẩm
-    private void AddNewProduct()
-    { 
+    private async Task AddNewProduct()
+    {
         newProduct.DateUpdate = DateTime.Now;
-        productService.AddProduct(newProduct);
-        warehouse = productService.GetProduct();
-        newProduct = new Product();
-    }
+        newProduct.WarehouseID = WarehouseID;
+
+        Db.Products.Add(newProduct);
+        await Db.SaveChangesAsync();
+
+        products = await Db.Products
+            .Include(p => p.value)
+            .Where(p => p.WarehouseID == WarehouseID)
+            .ToListAsync();
+
+    newProduct = new Product();
+    }   
     //Ẩn hiện form
     private void ShowFrom()
     {
         show = !show;
     }
-    //Edit mode
-    private void Edit()
-    {
-        
-    }
+    
 }

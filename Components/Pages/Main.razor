@@ -1,0 +1,87 @@
+@page "/"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using Inventory.Database
+@using Inventory.Model
+@inject AppDbContext Db
+
+<PageTitle>Danh sách kho</PageTitle>
+<h2 style="text-align:center">DANH SÁCH KHO HÀNG</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Tên kho</th>
+            <th>Địa chỉ</th>
+            <th>Ngày tạo</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (!warehouses.Any())
+        {
+            <tr><td colspan="4" class="text-center text-muted">Chưa có kho nào</td></tr>
+        }
+        else
+        {
+            @foreach (var w in warehouses)
+            {
+                <tr>
+                    <td>@w.Name</td>
+                    <td>@w.address</td>
+                    <td>@w.CreatTime.ToString("dd/MM/yyyy")</td>
+                    <td><a class="btn btn-sm btn-primary" href="/kho/@w.Id">Xem kho</a></td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+
+<button class="btn btn-primary rounded-circle position-fixed bottom-0 end-0 m-4 shadow-lg d-flex align-items-center justify-content-center"
+    style="width: 60px; height: 60px; font-size: 32px; z-index: 1000;"
+    @onclick="ShowForm">
+    +
+</button>
+
+@if (show)
+{
+    <div class="card p-3 my-3 shadow-sm" style="max-width:400px;">
+        <h2>Tạo kho mới</h2>
+        <EditForm Model="newWarehouse" OnValidSubmit="AddWarehouse">
+            <div class="mb-3">
+                <label>Tên kho</label>
+                <InputText @bind-Value="newWarehouse.Name" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label>Địa chỉ</label>
+                <InputText @bind-Value="newWarehouse.address" class="form-control" />
+            </div>
+            <button type="submit" class="btn btn-primary">Lưu</button>
+            <button type="button" class="btn btn-danger" @onclick="ShowForm">Hủy</button>
+        </EditForm>
+    </div>
+}
+
+@code {
+    private List<Warehouse> warehouses = new();
+    private Warehouse newWarehouse = new();
+    private bool show = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        warehouses = await Db.warehouses.ToListAsync();
+    }
+
+    private async Task AddWarehouse()
+    {
+        newWarehouse.CreatTime = DateTime.Now;
+        Db.warehouses.Add(newWarehouse);
+        await Db.SaveChangesAsync();
+
+        warehouses = await Db.warehouses.ToListAsync();
+        newWarehouse = new Warehouse();
+        show = false;
+    }
+
+    private void ShowForm() => show = !show;
+}

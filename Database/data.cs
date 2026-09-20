@@ -11,5 +11,7 @@ public class AppDbContext : DbContext
 
     public DbSet<Product> Products { get; set; }
     public DbSet<Warehouse> warehouses{get; set;}
+    public DbSet<ProductAttribute> ProductAttributes{get;set;}
+    public DbSet<ProductAttributeValue> ProductAttributeValue{get;set;}
 }
     
